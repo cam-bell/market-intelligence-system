@@ -1,0 +1,131 @@
+# Phase 1: Parallel Ingestion (no dependencies = parallel execution)
+ingest_news_data:
+  description: >
+    Fetch and filter market-moving news from web sources about {market_focus}
+    for tickers {tickers} from the last {time_window}. 
+    Filter for high-signal content with 95%+ accuracy.
+    Focus on identifying breaking news, sentiment shifts, and emerging narratives.
+  expected_output: >
+    A structured NewsCorpus with validated financial news articles
+  agent: data_scout
+  async_execution: true # This IS supported
+  output_file: output/news_corpus.json
+
+fetch_market_metrics:
+  description: >
+    Retrieve validated real-time market data for assets: {asset_list}.
+    Fetch metrics: {metrics}. Ensure data quality with <500ms latency.
+
+    IMPORTANT: For each asset, follow these steps:
+    1. First, use FinancialDataTool to get the current MarketSnapshot (includes volume)
+    2. Extract the volume field from the MarketSnapshot result
+    3. Then use HistoricalDataTool with the same ticker AND pass the volume from step 1 as the current_session_volume parameter
+  expected_output: >
+    A list of MarketDataSnapshot objects with validated market metrics
+  agent: market_data_fetcher
+  async_execution: true # This IS supported
+  output_file: output/market_snapshots.json
+
+ingest_social_sentiment:
+  description: >
+    Capture retail sentiment from social media and forums about {tickers}
+    from platforms {platforms} within {time_window}. Filter spam and deduplicate.
+  expected_output: >
+    A SocialCorpus with validated social media posts and engagement metrics
+  agent: alt_data_scout
+  async_execution: true # This IS supported
+  output_file: output/social_corpus.json
+
+# Phase 2: Hierarchical Synthesis (depends on Phase 1)
+synthesize_sentiment:
+  description: >
+    Analyze the raw text corpus from news and social ingestion tasks.
+    Use NLP and transformer models to extract normalized sentiment scores (-1.0 to +1.0)
+    and identify key themes across multiple languages and sources.
+
+    CRITICAL FORMAT REQUIREMENTS:
+    - The Sentiment Analysis Tool expects Pydantic models, NOT raw dictionaries
+    - When calling the tool, pass the context data directly as-is:
+      * news_corpus: Use the NewsCorpus object from ingest_news_data task context
+      * social_corpus: Use the SocialCorpus object from ingest_social_sentiment task context
+      * ticker: Extract from the tickers list
+
+    The tool signature is:
+    SentimentAnalysisTool(
+      news_corpus: NewsCorpus,  # Must have 'articles' list
+      social_corpus: SocialCorpus,  # Must have 'posts' list (can be empty)
+      ticker: str
+    )
+
+    If context data is in dict format, pass it directly - the tool will handle conversion.
+    Do NOT wrap it in another dict or modify the structure.
+
+
+    When encountering financial jargon (e.g., "short squeeze", "FUD"), consult your knowledge base
+    to understand the proper sentiment interpretation.
+  expected_output: >
+    A SentimentProfile with normalized scores, themes, and confidence metrics
+  agent: sentiment_analyst
+  context:
+    - ingest_news_data
+    - ingest_social_sentiment
+  output_file: output/sentiment_profiles.json
+
+calculate_risk_score:
+  description: >
+    Calculate unified risk score (0-100 scale) using VaR methodology, sentiment weighting,
+    and anomaly detection with 90% confidence intervals.
+    Incorporate market data, sentiment analysis, and Redis context.
+    Use formula: R = α*S + β*V + γ*A + δ*M where α=0.40, β=0.30, γ=0.20, δ=0.10
+
+    Use the Risk Calculation Tool with:
+    - ticker: from input
+    - sentiment_profile: from synthesize_sentiment context
+    - risk_features: from fetch_market_metrics context
+    - macro_risk: 0.0 (default)
+  expected_output: >
+    A RiskAssessment with risk_score, risk_level, component_scores, and anomaly_flags
+  agent: risk_engine
+  context:
+    - fetch_market_metrics
+    - synthesize_sentiment
+  output_file: output/risk_assessments.json
+
+compile_market_signals:
+  description: >
+    Validate and compile all inputs into a final structured MarketSignals output.
+    Ensure zero schema violations and maintain data quality gates.
+    Include timestamp, assets, net_sentiment, risk_score, and themes.
+  expected_output: >
+    A validated Pydantic MarketSignals JSON object with run_id, timestamp, signals list, and metadata
+  agent: signal_synthesizer
+  context:
+    - fetch_market_metrics
+    - synthesize_sentiment
+    - calculate_risk_score
+  output_file: output/market_signals.json
+# Phase 3: Sequential Reporting
+# validate_compliance:
+#   description: >
+#     Ensure alert outputs comply with regulatory and internal risk policies.
+#     Validate against policy rules, check alert frequency limits, and require dual confirmation for critical alerts.
+#   expected_output: >
+#     A ComplianceValidation object with approved status, violations, and audit trail
+#   agent: compliancereviewer # ⚠️ Need to add this agent
+#   context:
+#     - compile_market_signals
+#   output_file: output/compliance_validation.json
+
+# conditional_alert:
+#   description: >
+#     Execute conditional alert logic based on risk score threshold and compliance approval.
+#     IF risk_score >= 80: Send CRITICAL alert via pagerduty
+#     ELIF risk_score >= 60: Send HIGH alert via slack
+#     ELSE: Log only
+#   expected_output: >
+#     An AlertResult with alerts_triggered, alerts_blocked, and channel_results
+#   agent: alertmanager
+#   context:
+#     - compile_market_signals
+#     - validate_compliance
+#   output_file: output/alert_result.json

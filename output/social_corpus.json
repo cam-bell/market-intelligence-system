@@ -1,0 +1,92 @@
+{
+  "posts": [
+    {
+      "platform": "reddit",
+      "post_id": "1rldtns",
+      "content": "Apple's recent launch of the $599 iPhone 17e caught my attention from an investing perspective. The device combines A19 chip performance, ...",
+      "timestamp": "2026-03-11T12:38:56",
+      "ticker_mentions": ["AAPL"],
+      "engagement_score": 0.565
+    },
+    {
+      "platform": "reddit",
+      "post_id": "1rm7n5p",
+      "content": "AAPL is currently trading around $260-275 after a relatively stable but flat March 2026 so far (closed ~$202 on March 5, up/down minimal ...",
+      "timestamp": "2026-03-11T12:38:56",
+      "ticker_mentions": ["AAPL"],
+      "engagement_score": 0.56
+    },
+    {
+      "platform": "reddit",
+      "post_id": "https://www.reddit.com/r/AAPL/",
+      "content": "Apple scores highly overall because of its exceptional fundamentals and risk profile, but valuation and resilience factors keep it from ranking among the ...",
+      "timestamp": "2026-03-11T12:38:56",
+      "ticker_mentions": ["AAPL"],
+      "engagement_score": 0.576
+    },
+    {
+      "platform": "reddit",
+      "post_id": "1mtnwx0",
+      "content": "One way that you can use options to replicate an exchange fund is by buying a zero-cost collar on AAPL and then selling an OTM put to fund an ...",
+      "timestamp": "2026-03-11T12:38:56",
+      "ticker_mentions": ["OTM", "AAPL"],
+      "engagement_score": 0.558
+    },
+    {
+      "platform": "reddit",
+      "post_id": "1q6w0hi",
+      "content": "AAPL is still trading at a clear premium, yet revenue growth is slow, iPhone upgrades feel incremental, and services growth while solid isn't ...",
+      "timestamp": "2026-03-11T12:38:56",
+      "ticker_mentions": ["AAPL"],
+      "engagement_score": 0.554
+    },
+    {
+      "platform": "reddit",
+      "post_id": "1qc5meq",
+      "content": "Is Apple stock a good investment now? Best strategies for investing in Apple stocks.",
+      "timestamp": "2026-03-11T12:38:56",
+      "ticker_mentions": ["AAPL"],
+      "engagement_score": 0.477
+    },
+    {
+      "platform": "twitter",
+      "post_id": "2021695087617687801",
+      "content": "Shares of $AAPL down 1.2% (vs the Nasdaq down 0.3%) on Gurman's reporting that the new Siri is further delayed by 3-7 months underscores how ...",
+      "timestamp": "2026-03-11T12:38:56",
+      "ticker_mentions": ["AAPL"],
+      "engagement_score": 0.569
+    },
+    {
+      "platform": "twitter",
+      "post_id": "2022010258168975568",
+      "content": "BREAKING: Apple stock, $AAPL, falls -5% on the day, now on track for its biggest daily decline since April 2025. The Kobeissi Letter's Image ...",
+      "timestamp": "2026-03-11T12:38:56",
+      "ticker_mentions": ["AKING", "AAPL"],
+      "engagement_score": 0.565
+    },
+    {
+      "platform": "twitter",
+      "post_id": "2016990700638761448",
+      "content": "$AAPL Q1 2026 \"iPhone had its best-ever quarter driven by unprecedented demand, with all-time records across every geographic segment\" - Tim ...",
+      "timestamp": "2026-03-11T12:38:56",
+      "ticker_mentions": ["X", "AAPL"],
+      "engagement_score": 0.561
+    },
+    {
+      "platform": "stocktwits",
+      "post_id": "AAPL",
+      "content": "Get real-time Apple Inc (AAPL) stock price, news, financials, community insights, and trading ideas. Join 10 million+ investors and traders tracking markets ...",
+      "timestamp": "2026-03-11T12:38:57",
+      "ticker_mentions": ["AAPL"],
+      "engagement_score": 0.588
+    },
+    {
+      "platform": "stocktwits",
+      "post_id": "cZd9VsnRI5t",
+      "content": "AAPL, MSFT, CRWD, PANW: Dan Ives Identifies Top Tech Names Positioned To Navigate US-Iran War-Led Volatility ... Ives highlighted 10 key tech ...",
+      "timestamp": "2026-03-11T12:38:57",
+      "ticker_mentions": ["CRWD", "US", "MSFT", "PANW", "AAPL"],
+      "engagement_score": 0.566
+    }
+  ]
+}

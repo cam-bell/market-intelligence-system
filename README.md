@@ -71,13 +71,13 @@ These models make the system easier to reason about, validate, and diagram.
 
 ### Prerequisites
 
-- Python `>=3.10,<3.14`
+- Python `3.13.5`
 - `uv` recommended for environment and dependency management
 
 ### Install
 
 ```bash
-uv sync
+uv sync --frozen
 ```
 
 If you prefer the CrewAI install flow:
@@ -85,6 +85,17 @@ If you prefer the CrewAI install flow:
 ```bash
 crewai install
 ```
+
+### Rebuild From Scratch
+
+The repository is set up so the virtual environment can be deleted and recreated from the lockfile:
+
+```bash
+rm -rf .venv
+uv sync --frozen
+```
+
+`pyproject.toml` defines the project, `uv.lock` pins the resolved dependency graph, and `.python-version` pins the interpreter version used by the current project state.
 
 ### Environment
 
@@ -166,5 +177,3 @@ This repository reflects a strong prototype rather than a fully hardened product
 - `src/market_sentiment/archived` contains legacy experiments.
 - `tests/` is currently empty.
 - The root README has been modernized, but the codebase itself has not been refactored in this pass.
-
-Recommended cleanup notes are documented in [`RECOMMENDED_ADJUSTMENTS.md`](/Users/cameronbell/Projects/market-intelligence-system/RECOMMENDED_ADJUSTMENTS.md).

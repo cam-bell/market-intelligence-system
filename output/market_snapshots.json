@@ -1,0 +1,14 @@
+{
+  "MarketDataSnapshot": {
+    "ticker": "AAPL",
+    "last_price": 260.83,
+    "volume": 26403306,
+    "daily_high": 262.48,
+    "daily_low": 256.95,
+    "realized_volatility_21d": 0.2863352872280585,
+    "return_5d": 0.0020746090898611236,
+    "return_21d": -0.0469526454253143,
+    "volume_zscore_20d": -1.2389733726444858,
+    "max_drawdown_21d": -0.07157894736842108
+  }
+}

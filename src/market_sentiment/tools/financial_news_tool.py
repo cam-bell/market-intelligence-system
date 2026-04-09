@@ -3,7 +3,7 @@
 from crewai.tools import BaseTool
 from pydantic import BaseModel, Field
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, timedelta
 import re
 import os
 from loguru import logger
@@ -33,6 +33,53 @@ class FinancialNewsTool(BaseTool):
         self._yahoo_tool = None
         self._gnews_available = None
         self._yahoo_available = None
+        self._provider_cooldowns: dict[str, datetime] = {}
+        self._cache: dict[tuple[str, str, int, int], tuple[datetime, List[NewsArticle]]] = {}
+
+    def _cache_key(
+        self, provider: str, query: str, max_results: int, time_window_hours: int
+    ) -> tuple[str, str, int, int]:
+        return (provider, query.strip().upper(), max_results, time_window_hours)
+
+    def _get_cached(
+        self, provider: str, query: str, max_results: int, time_window_hours: int
+    ) -> Optional[List[NewsArticle]]:
+        key = self._cache_key(provider, query, max_results, time_window_hours)
+        cached = self._cache.get(key)
+        if not cached:
+            return None
+        cached_at, articles = cached
+        if datetime.now() - cached_at > timedelta(minutes=15):
+            self._cache.pop(key, None)
+            return None
+        logger.info(f"{provider} cache hit for {query}")
+        return articles
+
+    def _set_cached(
+        self,
+        provider: str,
+        query: str,
+        max_results: int,
+        time_window_hours: int,
+        articles: List[NewsArticle],
+    ) -> List[NewsArticle]:
+        key = self._cache_key(provider, query, max_results, time_window_hours)
+        self._cache[key] = (datetime.now(), articles)
+        return articles
+
+    def _provider_ready(self, provider: str) -> bool:
+        cooldown_until = self._provider_cooldowns.get(provider)
+        if cooldown_until and cooldown_until > datetime.now():
+            remaining = int((cooldown_until - datetime.now()).total_seconds())
+            logger.warning(
+                f"{provider} is cooling down after rate limiting; "
+                f"skipping for {remaining}s"
+            )
+            return False
+        return True
+
+    def _set_provider_cooldown(self, provider: str, minutes: int = 15) -> None:
+        self._provider_cooldowns[provider] = datetime.now() + timedelta(minutes=minutes)
 
     @property
     def gnews(self):
@@ -102,49 +149,50 @@ class FinancialNewsTool(BaseTool):
         Aggregates financial news from multiple validated sources.
         
         Strategy:
-        1. Try GNews first (financial-specific, validated sources)
-        2. Fallback to Yahoo Finance (ticker-specific)
-        3. Supplement with SerperDevTool (broader coverage)
+        1. Start with lower-cost / lower-rate-limit providers
+        2. Use sentiment providers only if we still need more coverage
+        3. Cache successful results to reduce repeated calls
         4. Deduplicate and validate articles
         """
         articles = []
-        
-        # 1. Massive API (PRIMARY - best sentiment + metadata)
-        try:
-            massive_articles = self._fetch_massive(query, max_results//2, time_window_hours)
-            articles.extend(massive_articles)
-            logger.info(f"Massive API returned {len(massive_articles)} articles with sentiment")
-        except Exception as e:
-            logger.warning(f"Massive API failed: {e}")
-    
-        # 2. AlphaVantage (SECONDARY - has sentiment scores)
-        if len(articles) < max_results * 2/3:
-            try:
-                av_articles = self._fetch_alphavantage(query, max_results//4, time_window_hours)
-                articles.extend(av_articles)
-                logger.info(f"AlphaVantage returned {len(av_articles)} articles")
-            except Exception as e:
-                logger.warning(f"AlphaVantage failed: {e}")
-    
-        # 3. Finnhub (TERTIARY - company-specific)
-        if len(articles) < max_results * 3/4:
-            try:
-                fh_articles = self._fetch_finnhub(query, max_results//4, time_window_hours)
-                articles.extend(fh_articles)
-                logger.info(f"Finnhub returned {len(fh_articles)} articles")
-            except Exception as e:
-                logger.warning(f"Finnhub failed: {e}")
-    
-        # 4. GNews (Primary - validated financial news)
+
+        # 1. GNews gives decent breadth without burning premium credits first.
         if self.gnews_available:
             try:
-                gnews_articles = self._fetch_gnews(query, max_results//2, time_window_hours)
+                gnews_articles = self._fetch_gnews(query, max_results // 2, time_window_hours)
                 articles.extend(gnews_articles)
                 logger.info(f"GNews returned {len(gnews_articles)} articles")
             except Exception as e:
                 logger.warning(f"GNews failed: {e}")
-        
-        # 5. Yahoo Finance (Ticker-specific news) - Fallback if GNews didn't return enough
+
+        # 2. AlphaVantage adds sentiment metadata with a generous free tier.
+        if len(articles) < max_results * 2 / 3:
+            try:
+                av_articles = self._fetch_alphavantage(query, max_results // 3, time_window_hours)
+                articles.extend(av_articles)
+                logger.info(f"AlphaVantage returned {len(av_articles)} articles")
+            except Exception as e:
+                logger.warning(f"AlphaVantage failed: {e}")
+
+        # 3. Finnhub adds company news without requiring the SDK.
+        if len(articles) < max_results * 3 / 4:
+            try:
+                fh_articles = self._fetch_finnhub(query, max_results // 3, time_window_hours)
+                articles.extend(fh_articles)
+                logger.info(f"Finnhub returned {len(fh_articles)} articles")
+            except Exception as e:
+                logger.warning(f"Finnhub failed: {e}")
+
+        # 4. Massive is valuable, but keep it late and light on the free tier.
+        if len(articles) < max_results // 2:
+            try:
+                massive_articles = self._fetch_massive(query, min(max_results // 3, 3), time_window_hours)
+                articles.extend(massive_articles)
+                logger.info(f"Massive API returned {len(massive_articles)} articles with sentiment")
+            except Exception as e:
+                logger.warning(f"Massive API failed: {e}")
+
+        # 5. Yahoo Finance (Ticker-specific news) - fallback if we still need more.
         if len(articles) < max_results // 2 and self.yahoo_available:
             try:
                 yahoo_articles = self._fetch_yahoo_finance(query, max_results//4, time_window_hours)
@@ -177,10 +225,15 @@ class FinancialNewsTool(BaseTool):
 
     def _fetch_massive(self, query: str, max_results: int, time_window: int) -> List[NewsArticle]:
         """Fetch from Massive API /v2/reference/news endpoint."""
+        cached = self._get_cached("Massive", query, max_results, time_window)
+        if cached is not None:
+            return cached
+        if not self._provider_ready("Massive"):
+            return []
+
         try:
             from massive import RESTClient
             from massive.rest.models import TickerNews
-            from datetime import timedelta
             
             api_key = os.getenv('MASSIVE_API_KEY')
             if not api_key:
@@ -201,17 +254,24 @@ class FinancialNewsTool(BaseTool):
             
             articles = []
             count = 0
+            items_seen = 0
+            max_items_seen = max(max_results * 3, 10)
             
             # Fetch news using list_ticker_news iterator
-            # Based on SDK example: order, limit, sort are supported
-            # Note: ticker filtering may be done via separate method or parameter
-            # We'll iterate and filter by ticker if needed
             for news_item in client.list_ticker_news(
                 order="desc",  # Most recent first
-                limit=str(min(max_results, 1000)),
+                limit=str(min(max_results, 5)),
                 sort="published_utc",
             ):
                 try:
+                    items_seen += 1
+                    if items_seen > max_items_seen:
+                        logger.info(
+                            f"Massive scan budget reached for {ticker}; "
+                            "stopping early to avoid free-tier pagination churn"
+                        )
+                        break
+
                     # Verify this is a TickerNews object
                     if not isinstance(news_item, TickerNews):
                         continue
@@ -339,7 +399,7 @@ class FinancialNewsTool(BaseTool):
                     logger.warning(f"Failed to parse Massive article: {e}")
                     continue
             
-            return articles
+            return self._set_cached("Massive", query, max_results, time_window, articles)
         except ImportError:
             logger.warning(
                 "massive package not installed. "
@@ -347,6 +407,12 @@ class FinancialNewsTool(BaseTool):
             )
             return []
         except Exception as e:
+            if "429" in str(e):
+                self._set_provider_cooldown("Massive", minutes=15)
+                logger.warning(
+                    "Massive rate limited the request. Cooling down and "
+                    "relying on alternate providers instead."
+                )
             logger.error(f"Massive API fetch error: {e}")
             return []
     
@@ -354,9 +420,12 @@ class FinancialNewsTool(BaseTool):
         self, query: str, max_results: int, time_window: int
     ) -> List[NewsArticle]:
         """Fetch from AlphaVantage NEWS_SENTIMENT API."""
+        cached = self._get_cached("AlphaVantage", query, max_results, time_window)
+        if cached is not None:
+            return cached
+
         try:
             import requests
-            from datetime import timedelta
             
             api_key = os.getenv('ALPHAVANTAGE_API_KEY')
             if not api_key:
@@ -428,7 +497,7 @@ class FinancialNewsTool(BaseTool):
                     logger.warning(f"Failed to parse AlphaVantage article: {e}")
                     continue
             
-            return articles
+            return self._set_cached("AlphaVantage", query, max_results, time_window, articles)
         except Exception as e:
             logger.error(f"AlphaVantage fetch error: {e}")
             return []
@@ -437,9 +506,12 @@ class FinancialNewsTool(BaseTool):
         self, query: str, max_results: int, time_window: int
     ) -> List[NewsArticle]:
         """Fetch from Finnhub Company News API."""
+        cached = self._get_cached("Finnhub", query, max_results, time_window)
+        if cached is not None:
+            return cached
+
         try:
-            import finnhub
-            from datetime import timedelta
+            import requests
             
             api_key = os.getenv('FINNHUB_API_KEY')
             if not api_key:
@@ -450,18 +522,23 @@ class FinancialNewsTool(BaseTool):
             ticker = self._extract_ticker_from_query(query)
             if not ticker:
                 return []
-            
-            client = finnhub.Client(api_key=api_key)
-            
+
             # Calculate date range
             to_date = datetime.now()
             from_date = to_date - timedelta(hours=time_window)
-            
-            news = client.company_news(
-                ticker,
-                _from=from_date.strftime('%Y-%m-%d'),
-                to=to_date.strftime('%Y-%m-%d')
+
+            response = requests.get(
+                "https://finnhub.io/api/v1/company-news",
+                params={
+                    "symbol": ticker,
+                    "from": from_date.strftime('%Y-%m-%d'),
+                    "to": to_date.strftime('%Y-%m-%d'),
+                    "token": api_key,
+                },
+                timeout=10,
             )
+            response.raise_for_status()
+            news = response.json()
             
             articles = []
             for item in news[:max_results]:
@@ -485,7 +562,7 @@ class FinancialNewsTool(BaseTool):
                     logger.warning(f"Failed to parse Finnhub article: {e}")
                     continue
             
-            return articles
+            return self._set_cached("Finnhub", query, max_results, time_window, articles)
         except Exception as e:
             logger.error(f"Finnhub fetch error: {e}")
             return []

@@ -1,0 +1,52 @@
+[
+    {
+        "source": "MarketBeat",
+        "title": "Sumitomo Life Insurance Co. Buys 5,115 Shares of Apple Inc. $AAPL",
+        "url": "https://www.marketbeat.com/instant-alerts/filing-sumitomo-life-insurance-co-buys-5115-shares-of-apple-inc-aapl-2026-03-11/",
+        "snippet": "Sumitomo Life Insurance Co. has increased its stake in Apple Inc. by 1.8% in the third quarter, acquiring an additional 5,115 shares. This purchase brings their total holdings to 289,193 shares, valued at $73,637,000, making Apple its 10th biggest holding. Other institutional investors have also adjusted their positions in Apple, while various headlines highlight both positive sentiments, such as India production milestones and analyst support, and negative sentiments, including German antitrust.",
+        "timestamp": "2026-03-11T12:38:44",
+        "ticker_mentions": ["AAPL", "QCOM"],
+        "toxicity_score": 0.0,
+        "sentiment_score": 0.00062613
+    },
+    {
+        "source": "Seeking Alpha",
+        "title": "Apple: Rising Free Cash Flow Expectations Strengthen The Bull Case (NASDAQ:AAPL)",
+        "url": "https://seekingalpha.com/article/4880933-apple-rising-free-cash-flow-expectations-strengthen-the-bull-case",
+        "snippet": "Apple delivered strong Q1 results, surpassing expectations due to significant growth in iPhone sales and services, particularly in China. The author has increased their price target for AAPL to $293.08, indicating a 12% upside, with a more optimistic scenario reaching $324.05. Despite some concerns about product strategy, the company's robust financial execution, expanding margins, and strong cash flow generation support a 'buy' rating.",
+        "timestamp": "2026-03-11T12:38:44",
+        "ticker_mentions": ["AAPL"],
+        "toxicity_score": 0.0,
+        "sentiment_score": 0.00752805
+    },
+    {
+        "source": "MarketBeat",
+        "title": "Apple Inc. $AAPL Stake Raised by K.J. Harrison & Partners Inc",
+        "url": "https://www.marketbeat.com/instant-alerts/filing-apple-inc-aapl-stake-raised-by-kj-harrison-partners-inc-2026-03-11/",
+        "snippet": "K.J. Harrison & Partners Inc. significantly increased its stake in Apple Inc. (NASDAQ:AAPL) by 19.1% in the third quarter, making it their largest holding. This move aligns with a generally positive analyst outlook, with Apple maintaining a 'Moderate Buy' consensus rating and achieving strong quarterly earnings beats.",
+        "timestamp": "2026-03-11T12:38:44",
+        "ticker_mentions": ["AAPL", "QCOM"],
+        "toxicity_score": 0.0,
+        "sentiment_score": 0.00069412
+    },
+    {
+        "source": "MarketBeat",
+        "title": "Apple Inc. $AAPL Shares Purchased by Mar Vista Investment Partners LLC",
+        "url": "https://www.marketbeat.com/instant-alerts/filing-apple-inc-aapl-shares-purchased-by-mar-vista-investment-partners-llc-2026-03-11/",
+        "snippet": "Mar Vista Investment Partners LLC significantly increased its stake in Apple Inc. (AAPL) during the third quarter, making the tech giant its second-largest holding. This comes as Apple continues to beat revenue and EPS expectations, and shifts more of its iPhone production to India to reduce geopolitical risks.",
+        "timestamp": "2026-03-11T12:38:44",
+        "ticker_mentions": ["AAPL", "QCOM"],
+        "toxicity_score": 0.0,
+        "sentiment_score": 0.00042313999999999996
+    },
+    {
+        "source": "MarketBeat",
+        "title": "Mhealth Apps Market Is Going to Boom Rapidly | Apple Inc., Google LLC, Samsung Electronics Co.",
+        "url": "https://www.openpr.com/news/4420200/mhealth-apps-market-is-going-to-boom-rapidly-apple-inc-google",
+        "snippet": "A new research study by Coherent Market Insights projects rapid growth for the global 'Mhealth Apps Market' from 2026 to 2033. The report provides a comprehensive analysis of market patterns, growth drivers, and competitive landscapes, segmented by product type, application, end-user, and region. Key players analyzed include Apple Inc., Google LLC, Samsung Electronics Co., Ltd., Fitbit Inc., Garmin Ltd., and others.",
+        "timestamp": "2026-03-11T12:38:44",
+        "ticker_mentions": ["AAPL", "GOOGL"],
+        "toxicity_score": 0.0,
+        "sentiment_score": 0.00296624
+    }
+]
